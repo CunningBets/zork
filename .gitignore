@@ -2,3 +2,4 @@ build/*
 .gradle/
 tmp/
 zork1/
+client/zork-client
