@@ -22,7 +22,14 @@ public class Zork extends Applet {
     }
 
     public boolean select() {
-        engine.onSelect();
+        if (!engine.isInitialized()) {
+            // First selection after install: initialize in a transaction
+            JCSystem.beginTransaction();
+            engine.onSelect();
+            JCSystem.commitTransaction();
+        } else {
+            engine.onSelect();
+        }
         return true;
     }
 
@@ -63,7 +70,9 @@ public class Zork extends Applet {
                 sendBufferedOutput(apdu);
                 break;
             case Data.INS_RESTART:
+                JCSystem.beginTransaction();
                 engine.processRestart();
+                JCSystem.commitTransaction();
                 sendBufferedOutput(apdu);
                 break;
             default:

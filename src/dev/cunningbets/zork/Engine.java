@@ -61,28 +61,48 @@ public class Engine {
     private byte[] tokenBuf; // working buffer for input processing
     private static final short TOKEN_BUF_SIZE = 82;
 
-    // Previous command for AGAIN
+    // Previous command for AGAIN (transient - no need to survive power loss)
     private byte[] prevCommand;
 
     private static final byte MAGIC_INITIALIZED = 0x5A;
+
+    // ---------------------------------------------------------------
+    // Static string fragments for output formatting (code space / ROM)
+    // These replace inline new byte[]{} which would allocate EEPROM.
+    // ---------------------------------------------------------------
+    private static final byte[] STR_INDENT = {' ', ' '};
+    private static final byte[] STR_OR_THE = {' ', 'o', 'r', ' ', 't', 'h', 'e', ' '};
+    private static final byte[] STR_A_SPC = {'A', ' '};
+    private static final byte[] STR_IS_HERE = {' ', 'i', 's', ' ', 'h', 'e', 'r', 'e', '.'};
+    private static final byte[] STR_THERE_IS_A = {'T', 'h', 'e', 'r', 'e', ' ', 'i', 's', ' ', 'a', ' '};
+    private static final byte[] STR_HERE_DOT = {' ', 'h', 'e', 'r', 'e', '.'};
+    private static final byte[] STR_THE_SPC = {'T', 'h', 'e', ' '};
+    private static final byte[] STR_CONTAINS = {' ', 'c', 'o', 'n', 't', 'a', 'i', 'n', 's', ':'};
+    private static final byte[] STR_OUT_OF = {' ', 'o', 'u', 't', ' ', 'o', 'f', ' '};
+    private static final byte[] STR_COMMA_IN = {',', ' ', 'i', 'n', ' '};
+    private static final byte[] STR_TURNS_DOT = {' ', 't', 'u', 'r', 'n', 's', '.'};
+    private static final byte[] STR_TURNS_LBL = {'T', 'u', 'r', 'n', 's', ':', ' '};
+    private static final byte[] STR_SCORE_LBL = {'S', 'c', 'o', 'r', 'e', ':', ' '};
+    private static final byte[] STR_LAMP_LBL = {'L', 'a', 'm', 'p', ':', ' '};
+    private static final byte[] STR_TURNS_FUEL = {' ', 't', 'u', 'r', 'n', 's', ' ', 'o', 'f', ' ', 'f', 'u', 'e', 'l'};
 
     /**
      * Constructor - allocates all arrays.
      * Called once during applet install.
      */
     Engine() {
-        // Transient arrays (RAM, cleared on reset/deselect)
+        // Transient arrays (RAM, cleared on deselect)
         outBuf = JCSystem.makeTransientByteArray(OUT_BUF_SIZE, JCSystem.CLEAR_ON_DESELECT);
         outState = JCSystem.makeTransientShortArray((short) 2, JCSystem.CLEAR_ON_DESELECT);
         parseResult = JCSystem.makeTransientShortArray(PARSE_SIZE, JCSystem.CLEAR_ON_DESELECT);
         tokenBuf = JCSystem.makeTransientByteArray(TOKEN_BUF_SIZE, JCSystem.CLEAR_ON_DESELECT);
+        prevCommand = JCSystem.makeTransientByteArray(TOKEN_BUF_SIZE, JCSystem.CLEAR_ON_DESELECT);
 
         // Persistent arrays (EEPROM)
         state = new byte[ST_SIZE];
         objLoc = new byte[Data.NUM_OBJECTS];
         objState = new byte[Data.NUM_OBJECTS];
         roomVisited = new byte[4]; // 32 bits = 32 rooms
-        prevCommand = new byte[TOKEN_BUF_SIZE];
     }
 
     /**
@@ -623,7 +643,7 @@ public class Engine {
         // Ambiguous - ask for clarification
         emit(Data.S_WHICH_DO_YOU_MEAN);
         emitObjName(match);
-        emitString(new byte[]{' ', 'o', 'r', ' ', 't', 'h', 'e', ' '}, (short) 0, (short) 8);
+        emitString(STR_OR_THE, (short) 0, (short) 8);
         emitObjName(secondMatch);
         emitChar((byte) '?');
         emitNL();
@@ -815,7 +835,7 @@ public class Engine {
             if (hasGameFlag(Data.GF_WINDOW_OPEN)) {
                 dest = Data.R_KITCHEN;
             } else {
-                emitString(new byte[]{'T','h','e',' ','w','i','n','d','o','w',' ','i','s',' ','c','l','o','s','e','d','.'}, (short)0, (short)21);
+                emit(Data.S_WINDOW_CLOSED);
                 emitNL();
                 return;
             }
@@ -823,7 +843,7 @@ public class Engine {
             if (hasGameFlag(Data.GF_WINDOW_OPEN)) {
                 dest = Data.R_BEHIND_HOUSE;
             } else {
-                emitString(new byte[]{'T','h','e',' ','w','i','n','d','o','w',' ','i','s',' ','c','l','o','s','e','d','.'}, (short)0, (short)21);
+                emit(Data.S_WINDOW_CLOSED);
                 emitNL();
                 return;
             }
@@ -833,7 +853,7 @@ public class Engine {
             if (hasGameFlag(Data.GF_TRAP_OPEN)) {
                 dest = Data.R_CELLAR;
             } else {
-                emitString(new byte[]{'Y','o','u',' ','c','a','n','\'','t',' ','g','o',' ','t','h','a','t',' ','w','a','y','.'}, (short)0, (short)22);
+                emit(Data.S_CANT_GO);
                 emitNL();
                 return;
             }
@@ -841,7 +861,7 @@ public class Engine {
             if (hasGameFlag(Data.GF_TRAP_OPEN)) {
                 dest = Data.R_LIVING_ROOM;
             } else {
-                emitString(new byte[]{'T','h','e',' ','t','r','a','p',' ','d','o','o','r',' ','i','s',' ','c','l','o','s','e','d','.'}, (short)0, (short)24);
+                emit(Data.S_TRAP_DOOR_CLOSED);
                 emitNL();
                 return;
             }
@@ -997,7 +1017,7 @@ public class Engine {
         emitNL();
         for (byte i = 1; i <= Data.NUM_OBJECTS; i++) {
             if (isObjectHeld(i)) {
-                emitString(new byte[]{' ', ' '}, (short) 0, (short) 2);
+                emitString(STR_INDENT, (short) 0, (short) 2);
                 emitObjName(i);
                 emitNL();
             }
@@ -1138,11 +1158,7 @@ public class Engine {
                 // Award points
                 addScore((byte) 8);
             } else {
-                emitString(new byte[]{
-                    'T','h','e',' ','t','r','o','l','l',' ','l','a','u','g','h','s',
-                    ' ','a','t',' ','y','o','u','r',' ','f','e','e','b','l','e',
-                    ' ','a','t','t','e','m','p','t','.'
-                }, (short) 0, (short) 39);
+                emit(Data.S_TROLL_LAUGHS);
                 emitNL();
             }
             return;
@@ -1166,7 +1182,7 @@ public class Engine {
 
         if (objId == Data.O_LAMP) {
             if ((objState[(short)(Data.O_LAMP - 1)] & Data.OS_ON) != 0) {
-                emitString(new byte[]{'I','t',' ','i','s',' ','a','l','r','e','a','d','y',' ','o','n','.'}, (short)0, (short)17);
+                emit(Data.S_ALREADY_ON);
                 emitNL();
             } else if (state[ST_LAMP_FUEL] <= 0) {
                 emit(Data.S_LAMP_DEAD);
@@ -1194,7 +1210,7 @@ public class Engine {
 
         if (objId == Data.O_LAMP) {
             if ((objState[(short)(Data.O_LAMP - 1)] & Data.OS_ON) == 0) {
-                emitString(new byte[]{'I','t',' ','i','s',' ','a','l','r','e','a','d','y',' ','o','f','f','.'}, (short)0, (short)18);
+                emit(Data.S_ALREADY_OFF);
                 emitNL();
             } else {
                 objState[(short)(Data.O_LAMP - 1)] &= ~Data.OS_ON;
@@ -1270,12 +1286,12 @@ public class Engine {
     private void handleScore() {
         emit(Data.S_SCORE_MSG);
         emitNumber((short)(state[ST_SCORE] & 0xFF));
-        emitString(new byte[]{' ','o','u','t',' ','o','f',' '}, (short) 0, (short) 8);
+        emitString(STR_OUT_OF, (short) 0, (short) 8);
         emitNumber((short) Data.MAX_SCORE);
-        emitString(new byte[]{',',' ','i','n',' '}, (short) 0, (short) 5);
+        emitString(STR_COMMA_IN, (short) 0, (short) 5);
         short turns = (short)(((state[ST_TURNS_HI] & 0xFF) << 8) | (state[ST_TURNS_LO] & 0xFF));
         emitNumber(turns);
-        emitString(new byte[]{' ','t','u','r','n','s','.'}, (short) 0, (short) 7);
+        emitString(STR_TURNS_DOT, (short) 0, (short) 7);
         emitNL();
     }
 
@@ -1296,7 +1312,7 @@ public class Engine {
         }
 
         if (Data.objHasFlag(objId, Data.OF_TAKEABLE)) {
-            emitString(new byte[]{'Y','o','u',' ','c','a','n','\'','t',' ','m','o','v','e',' ','t','h','a','t','.'}, (short)0, (short)20);
+            emit(Data.S_CANT_MOVE);
         } else {
             emit(Data.S_NOTHING_SPECIAL);
         }
@@ -1324,16 +1340,16 @@ public class Engine {
 
     private void handleDiagnose() {
         short turns = (short)(((state[ST_TURNS_HI] & 0xFF) << 8) | (state[ST_TURNS_LO] & 0xFF));
-        emitString(new byte[]{'T','u','r','n','s',':',' '}, (short)0, (short)7);
+        emitString(STR_TURNS_LBL, (short) 0, (short) 7);
         emitNumber(turns);
         emitNL();
-        emitString(new byte[]{'S','c','o','r','e',':',' '}, (short)0, (short)7);
+        emitString(STR_SCORE_LBL, (short) 0, (short) 7);
         emitNumber((short)(state[ST_SCORE] & 0xFF));
         emitNL();
         short fuel = (short)((state[ST_LAMP_FUEL] & 0xFF) * 2);
-        emitString(new byte[]{'L','a','m','p',':',' '}, (short)0, (short)6);
+        emitString(STR_LAMP_LBL, (short) 0, (short) 6);
         emitNumber(fuel);
-        emitString(new byte[]{' ','t','u','r','n','s',' ','o','f',' ','f','u','e','l'}, (short)0, (short)14);
+        emitString(STR_TURNS_FUEL, (short) 0, (short) 14);
         emitNL();
     }
 
@@ -1377,13 +1393,13 @@ public class Engine {
                 if (Data.objHasFlag(i, Data.OF_ACTOR) && (objState[(short)(i - 1)] & Data.OS_DEAD) != 0) continue;
 
                 if (Data.objHasFlag(i, Data.OF_ACTOR)) {
-                    emitString(new byte[]{'A',' '}, (short) 0, (short) 2);
+                    emitString(STR_A_SPC, (short) 0, (short) 2);
                     emitObjName(i);
-                    emitString(new byte[]{' ','i','s',' ','h','e','r','e','.'}, (short)0, (short)9);
+                    emitString(STR_IS_HERE, (short) 0, (short) 9);
                 } else {
-                    emitString(new byte[]{'T','h','e','r','e',' ','i','s',' ','a',' '}, (short) 0, (short) 11);
+                    emitString(STR_THERE_IS_A, (short) 0, (short) 11);
                     emitObjName(i);
-                    emitString(new byte[]{' ','h','e','r','e','.'}, (short) 0, (short) 6);
+                    emitString(STR_HERE_DOT, (short) 0, (short) 6);
                 }
                 emitNL();
             }
@@ -1483,13 +1499,13 @@ public class Engine {
         for (byte i = 1; i <= Data.NUM_OBJECTS; i++) {
             if (objLoc[(short)(i - 1)] == locCode) {
                 if (!found) {
-                    emitString(new byte[]{'T','h','e',' '}, (short)0, (short)4);
+                    emitString(STR_THE_SPC, (short) 0, (short) 4);
                     emitObjName(containerId);
-                    emitString(new byte[]{' ','c','o','n','t','a','i','n','s',':'}, (short)0, (short)10);
+                    emitString(STR_CONTAINS, (short) 0, (short) 10);
                     emitNL();
                     found = true;
                 }
-                emitString(new byte[]{' ', ' '}, (short) 0, (short) 2);
+                emitString(STR_INDENT, (short) 0, (short) 2);
                 emitObjName(i);
                 emitNL();
             }

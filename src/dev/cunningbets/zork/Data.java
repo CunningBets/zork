@@ -388,9 +388,14 @@ public class Data {
     public static final short S_NOT_CONTAINER = (short)(STOCK_STR_BASE + 49);
     public static final short S_VICTORY = (short)(STOCK_STR_BASE + 50);
     public static final short S_LAMP_GETTING_DIM = (short)(STOCK_STR_BASE + 51);
+    public static final short S_TRAP_DOOR_CLOSED = (short)(STOCK_STR_BASE + 52);
+    public static final short S_TROLL_LAUGHS = (short)(STOCK_STR_BASE + 53);
+    public static final short S_ALREADY_ON = (short)(STOCK_STR_BASE + 54);
+    public static final short S_ALREADY_OFF = (short)(STOCK_STR_BASE + 55);
+    public static final short S_CANT_MOVE = (short)(STOCK_STR_BASE + 56);
 
     // Total number of strings
-    public static final short NUM_STRINGS = (short)(STOCK_STR_BASE + 52);
+    public static final short NUM_STRINGS = (short)(STOCK_STR_BASE + 57);
 
 
     // ===============================================================
@@ -954,6 +959,17 @@ public class Data {
         'Y','o','u','r',' ','l','a','m','p',' ','i','s',' ','g','e','t','t','i','n','g',' ','d','i','m',
         '.',' ','Y','o','u','\'','d',' ','b','e','t','t','e','r',' ','f','i','n','d',' ','a','n','o',
         't','h','e','r',' ','s','o','u','r','c','e',' ','o','f',' ','l','i','g','h','t','.',0,
+        // 172: "The trap door is closed."
+        'T','h','e',' ','t','r','a','p',' ','d','o','o','r',' ','i','s',' ','c','l','o','s','e','d','.',0,
+        // 173: "The troll laughs at your feeble attempt."
+        'T','h','e',' ','t','r','o','l','l',' ','l','a','u','g','h','s',' ','a','t',' ','y','o','u','r',
+        ' ','f','e','e','b','l','e',' ','a','t','t','e','m','p','t','.',0,
+        // 174: "It is already on."
+        'I','t',' ','i','s',' ','a','l','r','e','a','d','y',' ','o','n','.',0,
+        // 175: "It is already off."
+        'I','t',' ','i','s',' ','a','l','r','e','a','d','y',' ','o','f','f','.',0,
+        // 176: "You can't move that."
+        'Y','o','u',' ','c','a','n','\'','t',' ','m','o','v','e',' ','t','h','a','t','.',0,
     };
 
     public static final short[] PROSE_IDX = {
@@ -1129,6 +1145,11 @@ public class Data {
         6926, // 169
         6953, // 170
         7109, // 171
+        7178, // 172 - S_TRAP_DOOR_CLOSED
+        7203, // 173 - S_TROLL_LAUGHS
+        7244, // 174 - S_ALREADY_ON
+        7262, // 175 - S_ALREADY_OFF
+        7281, // 176 - S_CANT_MOVE
     };
 
     public static short copyProse(short stringId, byte[] dest, short destOff) {
