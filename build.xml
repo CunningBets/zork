@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="zork" default="build" basedir=".">
+
+    <!-- Definitions -->
+    <property name="main.build.dir" value="build/zork"/>
+    <property name="main.src.dir" value="src/dev/cunningbets/zork"/>
+    <property name="test.build.dir" value="build/test"/>
+    <property name="test.src.dir" value="src/test"/>
+
+    <!-- JUnit Jupiter Dependencies -->
+    <path id="junit.classpath">
+        <fileset dir="lib" includes="*.jar"/>
+        <fileset dir="ext/sdks/jc222_kit" includes="*.jar"/>
+    </path>
+
+    <!-- Compile Java Source Files (for testing) -->
+    <target name="compile" description="Compile Java Source Files">
+        <mkdir dir="${main.build.dir}"/>
+        <javac destdir="${main.build.dir}" includeantruntime="false">
+            <src path="${main.src.dir}"/>
+            <src path="../passport/src"/>
+            <classpath refid="junit.classpath"/>
+        </javac>
+        <mkdir dir="${test.build.dir}"/>
+        <javac srcdir="${test.src.dir}" destdir="${test.build.dir}" includeantruntime="false">
+            <classpath>
+                <path refid="junit.classpath"/>
+                <pathelement path="${main.build.dir}"/>
+            </classpath>
+        </javac>
+    </target>
+
+    <target name="test" description="Run JUnit Jupiter Tests" depends="compile">
+        <junitlauncher printsummary="yes" haltonfailure="yes">
+            <classpath>
+                <path refid="junit.classpath"/>
+                <pathelement path="${main.build.dir}"/>
+                <pathelement path="${test.build.dir}"/>
+            </classpath>
+            <test name="test.AppletTest" outputdir="build">
+                <listener type="legacy-plain" sendSysOut="true" sendSysErr="true"/>
+            </test>
+            <test name="test.ZorkTest" outputdir="build">
+                <listener type="legacy-plain" sendSysOut="true" sendSysErr="true"/>
+            </test>
+        </junitlauncher>
+    </target>
+
+    <!-- Ant-Javacard Task Definition -->
+    <taskdef name="buildJavacard" classname="pro.javacard.ant.JavaCard" classpath="lib/ant-javacard.jar"/>
+
+    <!-- Build Applet .cap file -->
+    <target name="build" description="Generate .cap file">
+        <mkdir dir="${main.build.dir}"/>
+        <tstamp/>
+        <buildJavacard jckit="ext/sdks/jc222_kit">
+            <cap targetsdk="ext/sdks/jc222_kit" aid="F0:43:42:54:54:54" output="build/zork.cap" sources="${main.src.dir}" version="1.0">
+                <import jar="../passport/build/passport.jar"/>
+                <applet class="dev.cunningbets.zork.Zork" aid="F0:43:42:54:54:54:01"/>
+            </cap>
+        </buildJavacard>
+    </target>
+
+    <!-- Clean Up -->
+    <target name="clean" description="Remove Build Files">
+        <delete file="build/zork.cap"/>
+        <delete dir="build/zork"/>
+        <delete dir="build/test"/>
+        <delete dir="out"/>
+    </target>
+</project>
