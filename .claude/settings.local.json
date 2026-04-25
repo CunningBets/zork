@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc:*)",
+      "Bash(JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-18.jdk/Contents/Home ./gradlew test)",
+      "Bash(JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-18.jdk/Contents/Home ./gradlew test --info)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
