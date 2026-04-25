@@ -60,6 +60,7 @@ public class Engine {
     // Tokenizer workspace (transient)
     private byte[] tokenBuf; // working buffer for input processing
     private static final short TOKEN_BUF_SIZE = 82;
+    private byte[] wordBuf;  // 4-byte scratch for current word during parsing
 
     // Previous command for AGAIN (transient - no need to survive power loss)
     private byte[] prevCommand;
@@ -97,6 +98,7 @@ public class Engine {
         parseResult = JCSystem.makeTransientShortArray(PARSE_SIZE, JCSystem.CLEAR_ON_DESELECT);
         tokenBuf = JCSystem.makeTransientByteArray(TOKEN_BUF_SIZE, JCSystem.CLEAR_ON_DESELECT);
         prevCommand = JCSystem.makeTransientByteArray(TOKEN_BUF_SIZE, JCSystem.CLEAR_ON_DESELECT);
+        wordBuf = JCSystem.makeTransientByteArray((short) 4, JCSystem.CLEAR_ON_DESELECT);
 
         // Persistent arrays (EEPROM)
         state = new byte[ST_SIZE];
@@ -331,7 +333,7 @@ public class Engine {
         }
 
         // Extract first word (up to 4 chars)
-        byte[] word = new byte[4];
+        byte[] word = wordBuf;
         short wordLen = extractWord(buf, pos, end, word);
         if (wordLen == 0) {
             emit(Data.S_HUH);
