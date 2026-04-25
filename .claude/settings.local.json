@@ -5,7 +5,19 @@
       "Bash(JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-18.jdk/Contents/Home ./gradlew test)",
       "Bash(JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-18.jdk/Contents/Home ./gradlew test --info)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(~/bin/gp -l)",
+      "Bash(JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-8.jdk/Contents/Home ant -f /Volumes/Projects/javacard/P5CD081/zork/build.xml build 2>&1)",
+      "Bash(JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-18.jdk/Contents/Home ./gradlew compileTestJava)",
+      "Bash(JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-18.jdk/Contents/Home ./gradlew -q test --tests \"test.ZorkTest\")",
+      "Read(//private/tmp/**)",
+      "Bash(chmod +x tmp/assemble_data.sh)",
+      "Bash(bash tmp/assemble_data.sh)",
+      "Bash(cp:*)",
+      "Bash(JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-8.jdk/Contents/Home ant -f build.xml clean build 2>&1)",
+      "Bash(JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-8.jdk/Contents/Home ant -f build.xml build 2>&1)",
+      "Bash(~/bin/gp --reader \"ACS ACR1555 1S CL Reader\\(1\\)\" -d -install build/zork.cap 2>&1)",
+      "Bash(git rm:*)"
     ]
   }
 }

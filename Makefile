@@ -2,7 +2,7 @@
 .PHONY: build test
 
 JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-8.jdk/Contents/Home
-READER=ACS ACR1252 1S CL Reader(1)
+READER=ACS ACR1555 1S CL Reader(1)
 
 default: uninstall install
 

@@ -111,18 +111,18 @@ public class Engine {
             // If the initial location value > NUM_ROOMS, it's an "inside object" reference
             // stored as the raw byte from LOC_INSIDE_OBJ_BASE + objId - 201
             // Due to byte overflow issues, let me just map them directly
-            objLoc[i - 1] = initLoc;
-            objState[i - 1] = 0;
+            objLoc[(short)(i - 1)] = initLoc;
+            objState[(short)(i - 1)] = 0;
         }
 
         // Fix up "inside container" locations
         // Leaflet is inside mailbox
-        objLoc[Data.O_LEAFLET - 1] = (byte)(Data.LOC_INSIDE_OBJ_BASE + Data.O_MAILBOX - 1);
+        objLoc[(short)(Data.O_LEAFLET - 1)] = (byte)(Data.LOC_INSIDE_OBJ_BASE + Data.O_MAILBOX - 1);
         // Lunch and garlic inside brown sack
-        objLoc[Data.O_LUNCH - 1] = (byte)(Data.LOC_INSIDE_OBJ_BASE + Data.O_BROWN_SACK - 1);
-        objLoc[Data.O_GARLIC - 1] = (byte)(Data.LOC_INSIDE_OBJ_BASE + Data.O_BROWN_SACK - 1);
+        objLoc[(short)(Data.O_LUNCH - 1)] = (byte)(Data.LOC_INSIDE_OBJ_BASE + Data.O_BROWN_SACK - 1);
+        objLoc[(short)(Data.O_GARLIC - 1)] = (byte)(Data.LOC_INSIDE_OBJ_BASE + Data.O_BROWN_SACK - 1);
         // Axe carried by troll (inside troll object)
-        objLoc[Data.O_AXE - 1] = (byte)(Data.LOC_INSIDE_OBJ_BASE + Data.O_TROLL - 1);
+        objLoc[(short)(Data.O_AXE - 1)] = (byte)(Data.LOC_INSIDE_OBJ_BASE + Data.O_TROLL - 1);
 
         // Mailbox starts closed, sack starts closed
         // (containers start closed by default - no OS_OPEN flag)
@@ -639,7 +639,7 @@ public class Engine {
         if (objId < 1 || objId > Data.NUM_OBJECTS) return false;
 
         // Check if hidden
-        if ((objState[objId - 1] & Data.OS_HIDDEN) != 0) return false;
+        if ((objState[(short)(objId - 1)] & Data.OS_HIDDEN) != 0) return false;
 
         // Check if invisible and not yet revealed
         if (Data.objHasFlag(objId, Data.OF_INVISIBLE)) {
@@ -647,7 +647,7 @@ public class Engine {
             if (objId == Data.O_TRAP_DOOR && !hasGameFlag(Data.GF_RUG_MOVED)) return false;
         }
 
-        byte loc = objLoc[objId - 1];
+        byte loc = objLoc[(short)(objId - 1)];
 
         // In current room
         if (loc == room) return true;
@@ -661,7 +661,7 @@ public class Engine {
             if (isObjectVisible(parentId, room)) {
                 // If parent is a container, check if it's open
                 if (Data.objHasFlag(parentId, Data.OF_CONTAINER)) {
-                    return (objState[parentId - 1] & Data.OS_OPEN) != 0;
+                    return (objState[(short)(parentId - 1)] & Data.OS_OPEN) != 0;
                 }
                 // If parent is a surface, always visible
                 if (Data.objHasFlag(parentId, Data.OF_SURFACE)) return true;
@@ -673,12 +673,12 @@ public class Engine {
 
     private boolean isObjectInRoom(byte objId, byte room) {
         if (objId < 1 || objId > Data.NUM_OBJECTS) return false;
-        return objLoc[objId - 1] == room;
+        return objLoc[(short)(objId - 1)] == room;
     }
 
     private boolean isObjectHeld(byte objId) {
         if (objId < 1 || objId > Data.NUM_OBJECTS) return false;
-        return objLoc[objId - 1] == (byte) Data.LOC_PLAYER;
+        return objLoc[(short)(objId - 1)] == (byte) Data.LOC_PLAYER;
     }
 
     private void emitUnknownWord(byte[] word, short wordLen) {
@@ -901,7 +901,7 @@ public class Engine {
             if (!hasGameFlag(Data.GF_CELLAR_VISITED)) {
                 setGameFlag(Data.GF_CELLAR_VISITED);
                 clearGameFlag(Data.GF_TRAP_OPEN);
-                objState[Data.O_TRAP_DOOR - 1] &= ~Data.OS_OPEN;
+                objState[(short)(Data.O_TRAP_DOOR - 1)] &= ~Data.OS_OPEN;
                 emit(Data.S_TRAP_CLOSED_BEHIND);
                 emitNL();
                 emitNL();
@@ -938,8 +938,8 @@ public class Engine {
         }
 
         // Move to inventory
-        objLoc[objId - 1] = (byte) Data.LOC_PLAYER;
-        objState[objId - 1] |= Data.OS_MOVED;
+        objLoc[(short)(objId - 1)] = (byte) Data.LOC_PLAYER;
+        objState[(short)(objId - 1)] |= Data.OS_MOVED;
         emit(Data.S_TAKEN);
         emitNL();
     }
@@ -953,7 +953,7 @@ public class Engine {
             return;
         }
 
-        objLoc[objId - 1] = state[ST_ROOM];
+        objLoc[(short)(objId - 1)] = state[ST_ROOM];
         emit(Data.S_DROPPED);
         emitNL();
     }
@@ -972,7 +972,7 @@ public class Engine {
         }
 
         // If container and open, list contents
-        if (Data.objHasFlag(objId, Data.OF_CONTAINER) && (objState[objId - 1] & Data.OS_OPEN) != 0) {
+        if (Data.objHasFlag(objId, Data.OF_CONTAINER) && (objState[(short)(objId - 1)] & Data.OS_OPEN) != 0) {
             listContainerContents(objId);
         }
     }
@@ -1010,7 +1010,7 @@ public class Engine {
                 emit(Data.S_ALREADY_OPEN);
             } else {
                 setGameFlag(Data.GF_WINDOW_OPEN);
-                objState[Data.O_KITCHEN_WINDOW - 1] |= Data.OS_OPEN;
+                objState[(short)(Data.O_KITCHEN_WINDOW - 1)] |= Data.OS_OPEN;
                 emit(Data.S_WINDOW_OPEN);
             }
             emitNL();
@@ -1022,7 +1022,7 @@ public class Engine {
                 emit(Data.S_ALREADY_OPEN);
             } else if (isObjectHeld(Data.O_SKELETON_KEY)) {
                 setGameFlag(Data.GF_GRATING_OPEN);
-                objState[Data.O_GRATING - 1] |= Data.OS_OPEN;
+                objState[(short)(Data.O_GRATING - 1)] |= Data.OS_OPEN;
                 emit(Data.S_OPENED);
             } else {
                 emit(Data.S_GRATING_LOCKED);
@@ -1039,7 +1039,7 @@ public class Engine {
                     emit(Data.S_CANT_SEE);
                 } else {
                     setGameFlag(Data.GF_TRAP_OPEN);
-                    objState[Data.O_TRAP_DOOR - 1] |= Data.OS_OPEN;
+                    objState[(short)(Data.O_TRAP_DOOR - 1)] |= Data.OS_OPEN;
                     emit(Data.S_OPENED);
                 }
             }
@@ -1053,13 +1053,13 @@ public class Engine {
             return;
         }
 
-        if ((objState[objId - 1] & Data.OS_OPEN) != 0) {
+        if ((objState[(short)(objId - 1)] & Data.OS_OPEN) != 0) {
             emit(Data.S_ALREADY_OPEN);
             emitNL();
             return;
         }
 
-        objState[objId - 1] |= Data.OS_OPEN;
+        objState[(short)(objId - 1)] |= Data.OS_OPEN;
         emit(Data.S_OPENED);
         emitNL();
 
@@ -1078,7 +1078,7 @@ public class Engine {
                 emit(Data.S_ALREADY_CLOSED);
             } else {
                 clearGameFlag(Data.GF_WINDOW_OPEN);
-                objState[Data.O_KITCHEN_WINDOW - 1] &= ~Data.OS_OPEN;
+                objState[(short)(Data.O_KITCHEN_WINDOW - 1)] &= ~Data.OS_OPEN;
                 emit(Data.S_WINDOW_CLOSED);
             }
             emitNL();
@@ -1091,13 +1091,13 @@ public class Engine {
             return;
         }
 
-        if ((objState[objId - 1] & Data.OS_OPEN) == 0) {
+        if ((objState[(short)(objId - 1)] & Data.OS_OPEN) == 0) {
             emit(Data.S_ALREADY_CLOSED);
             emitNL();
             return;
         }
 
-        objState[objId - 1] &= ~Data.OS_OPEN;
+        objState[(short)(objId - 1)] &= ~Data.OS_OPEN;
         emit(Data.S_CLOSED);
         emitNL();
     }
@@ -1125,10 +1125,10 @@ public class Engine {
             if (hasWeapon) {
                 // Kill the troll
                 setGameFlag(Data.GF_TROLL_DEAD);
-                objState[Data.O_TROLL - 1] |= Data.OS_DEAD;
-                objLoc[Data.O_TROLL - 1] = (byte) Data.LOC_NOWHERE;
+                objState[(short)(Data.O_TROLL - 1)] |= Data.OS_DEAD;
+                objLoc[(short)(Data.O_TROLL - 1)] = (byte) Data.LOC_NOWHERE;
                 // Drop the axe in the room
-                objLoc[Data.O_AXE - 1] = state[ST_ROOM];
+                objLoc[(short)(Data.O_AXE - 1)] = state[ST_ROOM];
                 emit(Data.S_TROLL_DIES);
                 emitNL();
                 // Award points
@@ -1161,14 +1161,14 @@ public class Engine {
         }
 
         if (objId == Data.O_LAMP) {
-            if ((objState[Data.O_LAMP - 1] & Data.OS_ON) != 0) {
+            if ((objState[(short)(Data.O_LAMP - 1)] & Data.OS_ON) != 0) {
                 emitString(new byte[]{'I','t',' ','i','s',' ','a','l','r','e','a','d','y',' ','o','n','.'}, (short)0, (short)17);
                 emitNL();
             } else if (state[ST_LAMP_FUEL] <= 0) {
                 emit(Data.S_LAMP_DEAD);
                 emitNL();
             } else {
-                objState[Data.O_LAMP - 1] |= Data.OS_ON;
+                objState[(short)(Data.O_LAMP - 1)] |= Data.OS_ON;
                 emit(Data.S_LAMP_ON);
                 emitNL();
                 // If we just illuminated a dark room, describe it
@@ -1189,11 +1189,11 @@ public class Engine {
         }
 
         if (objId == Data.O_LAMP) {
-            if ((objState[Data.O_LAMP - 1] & Data.OS_ON) == 0) {
+            if ((objState[(short)(Data.O_LAMP - 1)] & Data.OS_ON) == 0) {
                 emitString(new byte[]{'I','t',' ','i','s',' ','a','l','r','e','a','d','y',' ','o','f','f','.'}, (short)0, (short)18);
                 emitNL();
             } else {
-                objState[Data.O_LAMP - 1] &= ~Data.OS_ON;
+                objState[(short)(Data.O_LAMP - 1)] &= ~Data.OS_ON;
                 emit(Data.S_LAMP_OFF);
                 emitNL();
             }
@@ -1241,14 +1241,14 @@ public class Engine {
         }
 
         // Container must be open
-        if (Data.objHasFlag(iobj, Data.OF_CONTAINER) && (objState[iobj - 1] & Data.OS_OPEN) == 0) {
+        if (Data.objHasFlag(iobj, Data.OF_CONTAINER) && (objState[(short)(iobj - 1)] & Data.OS_OPEN) == 0) {
             emit(Data.S_NOT_OPEN);
             emitNL();
             return;
         }
 
         // Place object inside container
-        objLoc[dobj - 1] = (byte)((Data.LOC_INSIDE_OBJ_BASE & 0xFF) + iobj - 1);
+        objLoc[(short)(dobj - 1)] = (byte)((Data.LOC_INSIDE_OBJ_BASE & 0xFF) + iobj - 1);
 
         // Trophy case scoring
         if (iobj == Data.O_TROPHY_CASE && Data.objHasFlag(dobj, Data.OF_TREASURE)) {
@@ -1366,11 +1366,11 @@ public class Engine {
 
         // List objects in room
         for (byte i = 1; i <= Data.NUM_OBJECTS; i++) {
-            if (objLoc[i - 1] == room) {
+            if (objLoc[(short)(i - 1)] == room) {
                 // Skip invisible objects
                 if (Data.objHasFlag(i, Data.OF_INVISIBLE) && !isObjectRevealed(i)) continue;
                 // Skip actors that are dead
-                if (Data.objHasFlag(i, Data.OF_ACTOR) && (objState[i - 1] & Data.OS_DEAD) != 0) continue;
+                if (Data.objHasFlag(i, Data.OF_ACTOR) && (objState[(short)(i - 1)] & Data.OS_DEAD) != 0) continue;
 
                 if (Data.objHasFlag(i, Data.OF_ACTOR)) {
                     emitString(new byte[]{'A',' '}, (short) 0, (short) 2);
@@ -1392,7 +1392,7 @@ public class Engine {
 
     private void housekeeping() {
         // Lamp fuel
-        if ((objState[Data.O_LAMP - 1] & Data.OS_ON) != 0) {
+        if ((objState[(short)(Data.O_LAMP - 1)] & Data.OS_ON) != 0) {
             if (state[ST_LAMP_FUEL] > 0) {
                 state[ST_LAMP_FUEL]--;
 
@@ -1401,7 +1401,7 @@ public class Engine {
                     emitNL();
                 }
                 if (state[ST_LAMP_FUEL] == 0) {
-                    objState[Data.O_LAMP - 1] &= ~Data.OS_ON;
+                    objState[(short)(Data.O_LAMP - 1)] &= ~Data.OS_ON;
                     emit(Data.S_LAMP_DEAD);
                     emitNL();
                 }
@@ -1418,10 +1418,10 @@ public class Engine {
         // Room is naturally lit
         if (Data.isRoomLit(room)) return true;
         // Player has a lit light source
-        if (isObjectHeld(Data.O_LAMP) && (objState[Data.O_LAMP - 1] & Data.OS_ON) != 0) return true;
+        if (isObjectHeld(Data.O_LAMP) && (objState[(short)(Data.O_LAMP - 1)] & Data.OS_ON) != 0) return true;
         if (isObjectHeld(Data.O_TORCH) && Data.objHasFlag(Data.O_TORCH, Data.OF_LIGHT)) return true;
         // Lamp or torch in the room
-        if (isObjectInRoom(Data.O_LAMP, room) && (objState[Data.O_LAMP - 1] & Data.OS_ON) != 0) return true;
+        if (isObjectInRoom(Data.O_LAMP, room) && (objState[(short)(Data.O_LAMP - 1)] & Data.OS_ON) != 0) return true;
         if (isObjectInRoom(Data.O_TORCH, room)) return true; // torch is always lit
         return false;
     }
@@ -1447,22 +1447,21 @@ public class Engine {
 
     private boolean isRoomVisited(byte roomId) {
         if (roomId < 1 || roomId > 32) return false;
-        byte byteIdx = (byte)((roomId - 1) / 8);
-        byte bitIdx = (byte)((roomId - 1) % 8);
-        return (roomVisited[byteIdx] & (1 << bitIdx)) != 0;
+        short byteIdx = (short)((roomId - 1) / 8);
+        short bitMask = (short)(1 << ((roomId - 1) % 8));
+        return (roomVisited[byteIdx] & bitMask) != 0;
     }
 
     private void setRoomVisited(byte roomId) {
         if (roomId < 1 || roomId > 32) return;
-        byte byteIdx = (byte)((roomId - 1) / 8);
-        byte bitIdx = (byte)((roomId - 1) % 8);
-        roomVisited[byteIdx] |= (byte)(1 << bitIdx);
+        short byteIdx = (short)((roomId - 1) / 8);
+        roomVisited[byteIdx] |= (byte)(1 << ((roomId - 1) % 8));
     }
 
     private short countInventory() {
         short count = 0;
         for (byte i = 1; i <= Data.NUM_OBJECTS; i++) {
-            if (objLoc[i - 1] == (byte) Data.LOC_PLAYER) count++;
+            if (objLoc[(short)(i - 1)] == (byte) Data.LOC_PLAYER) count++;
         }
         return count;
     }
@@ -1478,7 +1477,7 @@ public class Engine {
         byte locCode = (byte)((Data.LOC_INSIDE_OBJ_BASE & 0xFF) + containerId - 1);
         boolean found = false;
         for (byte i = 1; i <= Data.NUM_OBJECTS; i++) {
-            if (objLoc[i - 1] == locCode) {
+            if (objLoc[(short)(i - 1)] == locCode) {
                 if (!found) {
                     emitString(new byte[]{'T','h','e',' '}, (short)0, (short)4);
                     emitObjName(containerId);
@@ -1503,7 +1502,7 @@ public class Engine {
         byte locCode = (byte)((Data.LOC_INSIDE_OBJ_BASE & 0xFF) + Data.O_TROPHY_CASE - 1);
         short treasureCount = 0;
         for (byte i = 1; i <= Data.NUM_OBJECTS; i++) {
-            if (objLoc[i - 1] == locCode && Data.objHasFlag(i, Data.OF_TREASURE)) {
+            if (objLoc[(short)(i - 1)] == locCode && Data.objHasFlag(i, Data.OF_TREASURE)) {
                 treasureCount++;
             }
         }
