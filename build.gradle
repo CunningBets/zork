@@ -10,7 +10,7 @@ repositories {
 sourceSets {
     main {
         java {
-            srcDirs = ['src', '../passport/src']
+            srcDirs = ['src']
             include 'dev/cunningbets/zork/**'
         }
     }

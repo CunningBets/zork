@@ -18,7 +18,7 @@
         <mkdir dir="${main.build.dir}"/>
         <javac destdir="${main.build.dir}" includeantruntime="false">
             <src path="${main.src.dir}"/>
-            <src path="../passport/src"/>
+
             <classpath refid="junit.classpath"/>
         </javac>
         <mkdir dir="${test.build.dir}"/>
@@ -54,9 +54,8 @@
         <mkdir dir="${main.build.dir}"/>
         <tstamp/>
         <buildJavacard jckit="ext/sdks/jc222_kit">
-            <cap targetsdk="ext/sdks/jc222_kit" aid="F0:43:42:54:54:54" output="build/zork.cap" sources="${main.src.dir}" version="1.0">
-                <import jar="../passport/build/passport.jar"/>
-                <applet class="dev.cunningbets.zork.Zork" aid="F0:43:42:54:54:54:01"/>
+            <cap targetsdk="ext/sdks/jc222_kit" aid="A0:00:00:06:47:2E:5A:4F:52:4B" output="build/zork.cap" sources="${main.src.dir}" version="1.0">
+                <applet class="dev.cunningbets.zork.Zork" aid="A0:00:00:06:47:2E:5A:4F:52:4B:01"/>
             </cap>
         </buildJavacard>
     </target>
