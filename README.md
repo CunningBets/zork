@@ -10,6 +10,8 @@ A faithful reimplementation of **Mini-Zork I** (Infocom, 1987) running entirely 
 
 A text adventure game that lives on a contactless smart card. Tap the card to a reader, send commands via APDU, and explore the Great Underground Empire — all powered by a tiny chip with 81KB of storage. ⚡
 
+WARNING: This was produced using LLM, though it has been tested against a real card.
+
 ```
 > open mailbox
 Opened.
