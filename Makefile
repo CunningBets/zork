@@ -10,7 +10,7 @@ uninstall:
 	~/bin/gp --reader "$(READER)" -d --uninstall build/zork.cap
 
 install: build
-	~/bin/gp --reader "$(READER)" -d -install build/zork.cap
+	~/bin/gp --reader "$(READER)" -d -install build/zork.cap --privs CardReset
 
 build:
 	JAVA_HOME="$(JAVA_HOME)" ant

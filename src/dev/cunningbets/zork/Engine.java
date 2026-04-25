@@ -652,6 +652,10 @@ public class Engine {
         // In current room
         if (loc == room) return true;
 
+        // Grating is visible from both Grating Clearing and Grating Room
+        if (objId == Data.O_GRATING &&
+            (room == Data.R_GRATING_CLEARING || room == Data.R_GRATING_ROOM)) return true;
+
         // In inventory
         if (loc == (byte) Data.LOC_PLAYER) return true;
 

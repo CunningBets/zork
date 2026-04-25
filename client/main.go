@@ -256,80 +256,82 @@ func runTests(card *scard.Card) int {
 		return true
 	}
 
-	// -- Restart to clean state --
-	text, err := sendRestart(card)
+	// -- SELECT applet, then restart to clean state --
+	text, err := selectApplet(card)
+	if !check("select applet", text, []string{}, err) {
+		fmt.Println("Cannot select applet - aborting tests")
+		return 1
+	}
+
+	text, err = sendRestart(card)
 	if !check("restart", text, []string{"West of House"}, err) {
 		fmt.Println("Cannot restart - aborting tests")
 		return 1
 	}
 
 	steps := []testStep{
-		// Basic navigation and room descriptions
+		// ======== Basic navigation ========
 		{"look", []string{"West of House", "open field"}, "look at starting room"},
 		{"n", []string{"North of House"}, "go north"},
 		{"s", []string{"West of House"}, "go back south"},
 		{"s", []string{"South of House"}, "go south"},
-		{"w", []string{"Forest"}, "enter forest south→west"},
-		{"n", []string{"West of House"}, "forest back to start via south→north"},
+		{"n", []string{"West of House"}, "return north to start"},
 
-		// Open mailbox and read leaflet
+		// ======== Mailbox puzzle ========
 		{"open mailbox", []string{"Opened"}, "open mailbox"},
 		{"take leaflet", []string{"Taken"}, "take leaflet"},
 		{"read leaflet", []string{"WELCOME TO ZORK"}, "read leaflet"},
 		{"i", []string{"carrying", "leaflet"}, "inventory shows leaflet"},
 		{"drop leaflet", []string{"Dropped"}, "drop leaflet"},
 
-		// Navigate to behind house and open window
-		{"n", []string{"North of House"}, "north from start"},
+		// ======== Enter house via window ========
+		// West of House → N → North of House → E → Behind House
+		{"n", []string{"North of House"}, "north to north of house"},
 		{"e", []string{"Behind House"}, "east to behind house"},
 		{"open window", []string{"effort", "open"}, "open kitchen window"},
 		{"w", []string{"Kitchen"}, "enter kitchen through window"},
 
-		// Kitchen items
+		// ======== Kitchen ========
 		{"look", []string{"Kitchen", "table"}, "look in kitchen"},
 		{"open sack", []string{"Opened"}, "open brown sack"},
-		{"take garlic", []string{"Taken"}, "take garlic from sack"},
 
-		// Navigate to living room
+		// ======== Living room: get lamp + sword ========
 		{"e", []string{"Living Room"}, "east to living room"},
-		{"take lamp", []string{"Taken"}, "take brass lantern"},
-		{"take sword", []string{"Taken"}, "take elvish sword"},
+		{"take lamp", []string{"Taken"}, "take brass lantern"},   // inv: 1
+		{"take sword", []string{"Taken"}, "take elvish sword"},   // inv: 2
 
-		// Rug and trap door puzzle
+		// ======== Rug → trap door → cellar ========
 		{"move rug", []string{"trap door"}, "move rug reveals trap door"},
 		{"open trap", []string{"Opened"}, "open trap door"},
-
-		// Light lamp and descend
 		{"light lamp", []string{"now on"}, "light the lantern"},
-		{"down", []string{"Cellar", "trap door"}, "descend to cellar"},
-
-		// Cellar - trap door closes behind us
-		{"look", []string{"Cellar"}, "look in cellar"},
+		{"down", []string{"Cellar", "trap door"}, "descend to cellar (trap closes)"},
+		{"look", []string{"Cellar"}, "confirm cellar"},
 		{"u", []string{"closed"}, "trap door closed behind us"},
 
-		// Troll room
+		// ======== Troll combat ========
 		{"n", []string{"Troll Room"}, "north to troll room"},
 		{"look", []string{"troll"}, "troll is present"},
 		{"e", []string{"troll"}, "troll blocks east"},
 		{"attack troll", []string{"vanishes", "smoke"}, "kill troll with sword"},
-		{"e", []string{"East of Chasm"}, "east now passable"},
+		{"drop sword", []string{"Dropped"}, "drop sword (free inv slot)"}, // inv: 1
+		{"e", []string{"East of Chasm"}, "east now unblocked"},
 
-		// Explore underground
+		// ======== Collect underground treasures ========
 		{"n", []string{"Gallery"}, "north to gallery"},
-		{"take painting", []string{"Taken"}, "take painting"},
+		{"take painting", []string{"Taken"}, "take painting"},     // inv: 2
 		{"n", []string{"N-S Passage"}, "north to passage"},
 		{"n", []string{"Round Room"}, "north to round room"},
-		{"take bracelet", []string{"Taken"}, "take bracelet"},
+		{"take bracelet", []string{"Taken"}, "take bracelet"},     // inv: 3
 		{"e", []string{"Loud Room"}, "east to loud room"},
-		{"take bar", []string{"Taken"}, "take platinum bar"},
+		{"take bar", []string{"Taken"}, "take platinum bar"},      // inv: 4
 		{"w", []string{"Round Room"}, "back to round room"},
 		{"n", []string{"Narrow Passage"}, "north to narrow passage"},
 		{"n", []string{"Treasure Room"}, "north to treasure room"},
-		{"take torch", []string{"Taken"}, "take ivory torch"},
-		{"take chalice", []string{"Taken"}, "take silver chalice"},
-		{"i", []string{"carrying", "painting", "bracelet"}, "inventory check mid-game"},
+		{"take torch", []string{"Taken"}, "take ivory torch"},     // inv: 5
+		{"take chalice", []string{"Taken"}, "take silver chalice"},// inv: 6
+		{"i", []string{"carrying", "painting", "bracelet", "chalice"}, "inventory check"},
 
-		// Head back to deposit treasures
+		// ======== Return underground → maze for key + coins ========
 		{"s", []string{"Narrow Passage"}, "back south"},
 		{"s", []string{"Round Room"}, "back to round room"},
 		{"s", []string{"N-S Passage"}, "back to passage"},
@@ -337,45 +339,31 @@ func runTests(card *scard.Card) int {
 		{"s", []string{"East of Chasm"}, "back to chasm"},
 		{"w", []string{"Troll Room"}, "west to troll room"},
 		{"s", []string{"Cellar"}, "south to cellar"},
-
-		// Go up - trap door is closed, need to navigate through maze to grating
-		// Actually, let's try going south to maze and finding the key
 		{"s", []string{"maze", "twisty"}, "south into maze 1"},
-		{"e", []string{"maze", "twisty"}, "east in maze"},
-		{"take key", []string{"Taken"}, "take skeleton key in maze 2"},
-		{"s", []string{"Dead End"}, "south to dead end"},
-		{"take knife", []string{"Taken"}, "take rusty knife"},
-		{"n", []string{"maze"}, "back from dead end"},
+		{"e", []string{"maze", "twisty"}, "east to maze 2"},
+		{"take key", []string{"Taken"}, "take skeleton key"},      // inv: 7
+		{"n", []string{"maze"}, "north to maze 3"},
+		{"take coins", []string{"Taken"}, "take bag of coins"},    // inv: 8 (full)
 
-		// Navigate to maze 3 for bag of coins
-		{"n", []string{"maze"}, "north in maze"},
-		{"s", []string{"maze"}, "south to maze 3"},
-		{"take coins", []string{"Taken"}, "take bag of coins"},
-
-		// Get to round room via maze 3 east exit
-		{"e", []string{"Round Room"}, "maze 3 east to round room"},
-
-		// Back through underground to chasm→troll→cellar
-		{"s", []string{"N-S Passage"}, "south from round room"},
-		{"s", []string{"Gallery"}, "south to gallery"},
-		{"s", []string{"East of Chasm"}, "south to chasm"},
-		{"w", []string{"Troll Room"}, "west to troll room"},
-		{"s", []string{"Cellar"}, "south to cellar"},
-		{"s", []string{"maze"}, "back to maze 1"},
+		// ======== Exit via grating ========
+		{"n", []string{"maze"}, "north to maze 1"},
 		{"u", []string{"Grating Room"}, "up to grating room"},
 		{"open grating", []string{"Opened"}, "open grating with key"},
 		{"u", []string{"Grating Clearing"}, "up through grating"},
 
-		// Surface! Navigate to living room to deposit treasures
-		{"n", []string{"Forest"}, "north from grating clearing"},
+		// ======== Surface → living room to deposit treasures ========
+		// Grating Clearing → N → Forest South → N → South of House
+		// → N → West of House → N → North of House → E → Behind House
+		// → W → Kitchen (window still open) → E → Living Room
+		{"n", []string{"Forest"}, "north to forest south"},
 		{"n", []string{"South of House"}, "north to south of house"},
 		{"n", []string{"West of House"}, "north to west of house"},
-		{"n", []string{"North of House"}, "north of house"},
+		{"n", []string{"North of House"}, "north to north of house"},
 		{"e", []string{"Behind House"}, "east to behind house"},
-		{"w", []string{"Kitchen"}, "through window to kitchen"},
+		{"w", []string{"Kitchen"}, "west through window to kitchen"},
 		{"e", []string{"Living Room"}, "east to living room"},
 
-		// Deposit treasures in trophy case
+		// ======== Deposit 6 treasures ========
 		{"open case", []string{"Opened"}, "open trophy case"},
 		{"put painting in case", []string{"Done"}, "deposit painting"},
 		{"put bracelet in case", []string{"Done"}, "deposit bracelet"},
@@ -383,26 +371,31 @@ func runTests(card *scard.Card) int {
 		{"put torch in case", []string{"Done"}, "deposit torch"},
 		{"put chalice in case", []string{"Done"}, "deposit chalice"},
 		{"put coins in case", []string{"Done"}, "deposit bag of coins"},
-		{"score", []string{"42"}, "score after 6 treasures"},
+		// Score: 8 (troll) + 6+5+5+6+5+10 = 45
+		{"score", []string{"45"}, "score after troll + 6 treasures"},
 
-		// Need the egg from the tree for 7th treasure
+		// ======== Get egg from tree ========
+		// Living Room → E(=Kitchen) → W → Behind House → E → Clearing
+		// → S → Forest Path → U → Up a Tree
 		{"w", []string{"Kitchen"}, "back to kitchen"},
 		{"w", []string{"Behind House"}, "out through window"},
 		{"e", []string{"Clearing"}, "east to clearing"},
 		{"s", []string{"Forest Path"}, "south to forest path"},
 		{"u", []string{"Up a Tree"}, "climb tree"},
 		{"take egg", []string{"Taken"}, "take jeweled egg"},
+		// Down → Forest Path → S → North of House → E → Behind House
+		// → W → Kitchen → E → Living Room
 		{"d", []string{"Forest Path"}, "climb down"},
-		{"s", []string{"North of House"}, "south to north of house"},
+		{"s", []string{"North of House"}, "south from forest path"},
 		{"e", []string{"Behind House"}, "east to behind house"},
 		{"w", []string{"Kitchen"}, "through window"},
 		{"e", []string{"Living Room"}, "to living room"},
-		{"put egg in case", []string{"Done", "Congratulations"}, "deposit egg - victory!"},
 
-		// Final score
+		// ======== Final treasure → victory ========
+		{"put egg in case", []string{"Done", "Congratulations"}, "deposit egg - victory!"},
 		{"score", []string{"50"}, "final score is 50"},
 
-		// Test some error handling
+		// ======== Error handling & misc ========
 		{"xyzzy", []string{"don't know"}, "unknown word"},
 		{"take", []string{"don't understand"}, "incomplete sentence"},
 		{"brief", []string{"Brief"}, "brief mode"},
