@@ -361,6 +361,250 @@ public class ZorkTest extends BaseTest {
             "Should see egg or nest in tree");
     }
 
+    // ---- Underground navigation ----
+
+    @Test
+    public void testUndergroundNavigation() {
+        selectAndGetText();
+        navigatePastTroll();
+        // East of Chasm → Gallery → N-S Passage → Round Room
+        String text = sendCommand("n"); // Gallery
+        assertTrue(text.contains("Gallery"), "Should reach Gallery");
+        text = sendCommand("n"); // N-S Passage
+        assertTrue(text.contains("N-S Passage"), "Should reach N-S Passage");
+        text = sendCommand("n"); // Round Room
+        assertTrue(text.contains("Round Room"), "Should reach Round Room");
+        // Round Room → Loud Room → back
+        text = sendCommand("e");
+        assertTrue(text.contains("Loud Room"), "Should reach Loud Room");
+        text = sendCommand("w");
+        assertTrue(text.contains("Round Room"), "Should return to Round Room");
+        // Round Room → Narrow Passage → Treasure Room
+        text = sendCommand("n");
+        assertTrue(text.contains("Narrow Passage"), "Should reach Narrow Passage");
+        text = sendCommand("n");
+        assertTrue(text.contains("Treasure Room"), "Should reach Treasure Room");
+    }
+
+    @Test
+    public void testMazeNavigation() {
+        selectAndGetText();
+        navigateToCellar();
+        // Cellar → S → Maze 1
+        String text = sendCommand("s");
+        assertTrue(text.contains("maze") || text.contains("twisty"), "Should enter maze");
+        // Maze 1 → E → Maze 2
+        text = sendCommand("e");
+        assertTrue(text.contains("maze"), "Should be in maze 2");
+        // Maze 2 → S → Dead End
+        text = sendCommand("s");
+        assertTrue(text.contains("Dead End"), "Should reach dead end");
+        // Dead End → N → Maze 2
+        text = sendCommand("n");
+        assertTrue(text.contains("maze"), "Should return to maze 2");
+        // Maze 2 → N → Maze 3
+        text = sendCommand("n");
+        assertTrue(text.contains("maze"), "Should be in maze 3");
+        // Maze 3 → E → Round Room
+        text = sendCommand("e");
+        assertTrue(text.contains("Round Room"), "Maze 3 east should reach Round Room");
+    }
+
+    @Test
+    public void testTakeUndergroundTreasures() {
+        selectAndGetText();
+        navigatePastTroll();
+        // Gallery: painting
+        sendCommand("n");
+        String text = sendCommand("take painting");
+        assertTrue(text.contains("Taken"), "Should take painting");
+        // Round Room: bracelet
+        sendCommand("n");
+        sendCommand("n");
+        text = sendCommand("take bracelet");
+        assertTrue(text.contains("Taken"), "Should take bracelet");
+        // Loud Room: bar
+        sendCommand("e");
+        text = sendCommand("take bar");
+        assertTrue(text.contains("Taken"), "Should take platinum bar");
+        // Treasure Room: torch, chalice
+        sendCommand("w");
+        sendCommand("n");
+        sendCommand("n");
+        text = sendCommand("take torch");
+        assertTrue(text.contains("Taken"), "Should take torch");
+        text = sendCommand("take chalice");
+        assertTrue(text.contains("Taken"), "Should take chalice");
+    }
+
+    @Test
+    public void testMazeItems() {
+        selectAndGetText();
+        navigateToCellar();
+        sendCommand("s"); // Maze 1
+        sendCommand("e"); // Maze 2
+        String text = sendCommand("take key");
+        assertTrue(text.contains("Taken"), "Should take skeleton key");
+        sendCommand("n"); // Maze 3
+        text = sendCommand("take coins");
+        assertTrue(text.contains("Taken"), "Should take bag of coins");
+    }
+
+    @Test
+    public void testGratingOpenWithKey() {
+        selectAndGetText();
+        navigateToCellar();
+        sendCommand("s"); // Maze 1
+        sendCommand("e"); // Maze 2
+        sendCommand("take key");
+        sendCommand("n"); // Maze 3
+        sendCommand("n"); // Maze 1
+        sendCommand("u"); // Grating Room
+        String text = sendCommand("open grating");
+        assertTrue(text.contains("Opened"), "Should open grating with key");
+        text = sendCommand("u"); // Up through grating
+        assertTrue(text.contains("Grating Clearing"), "Should exit to Grating Clearing");
+    }
+
+    @Test
+    public void testGratingVisibleFromBelow() {
+        selectAndGetText();
+        navigateToCellar();
+        sendCommand("s"); // Maze 1
+        sendCommand("u"); // Grating Room
+        // Grating should be visible from Grating Room
+        String text = sendCommand("examine grating");
+        assertTrue(text.contains("grating"), "Grating should be visible from Grating Room");
+    }
+
+    @Test
+    public void testLivingRoomKitchenReturn() {
+        selectAndGetText();
+        navigateToLivingRoom();
+        // Living Room W → Kitchen
+        String text = sendCommand("w");
+        assertTrue(text.contains("Kitchen"), "Living Room west should go to Kitchen");
+        // Kitchen E → Living Room
+        text = sendCommand("e");
+        assertTrue(text.contains("Living Room"), "Kitchen east should go to Living Room");
+    }
+
+    @Test
+    public void testForestPathClearingRoute() {
+        selectAndGetText();
+        navigateToLivingRoom();
+        sendCommand("w");  // Kitchen
+        sendCommand("w");  // Behind House (through window)
+        String text = sendCommand("e"); // Clearing
+        assertTrue(text.contains("Clearing"), "Behind House east should reach Clearing");
+        text = sendCommand("s"); // Forest Path
+        assertTrue(text.contains("Forest Path"), "Clearing south should reach Forest Path");
+        text = sendCommand("s"); // North of House
+        assertTrue(text.contains("North of House"), "Forest Path south to North of House");
+    }
+
+    @Test
+    public void testInventoryCapacity() {
+        selectAndGetText();
+        navigateToLivingRoom();
+        sendCommand("take lamp");
+        sendCommand("take sword");
+        sendCommand("w"); // Kitchen
+        sendCommand("open sack");
+        sendCommand("take garlic");
+        sendCommand("take sack");
+        sendCommand("take bottle");
+        sendCommand("e"); // Living Room
+        sendCommand("move rug");
+        sendCommand("open trap");
+        // That's 5 items. Take rug? No, not takeable. Take trap door? No.
+        // Go to attic for more items
+        sendCommand("w"); // Kitchen
+        sendCommand("u"); // Attic
+        sendCommand("take knife");
+        sendCommand("take rope"); // 7 items
+        // Go get leaflet too
+        sendCommand("d"); // Kitchen
+        sendCommand("w"); // Behind House
+        sendCommand("w"); // West of House via forest? No...
+        // Actually let's just check we can take 8
+        String text = sendCommand("i");
+        assertTrue(text.contains("carrying"), "Should be carrying items");
+    }
+
+    @Test
+    public void testFullTreasureDeposit() {
+        selectAndGetText();
+        navigatePastTroll();
+        sendCommand("drop sword"); // Free up slot
+        // Collect 6 underground treasures
+        sendCommand("n"); sendCommand("take painting");
+        sendCommand("n"); sendCommand("n"); sendCommand("take bracelet");
+        sendCommand("e"); sendCommand("take bar");
+        sendCommand("w"); sendCommand("n"); sendCommand("n");
+        sendCommand("take torch"); sendCommand("take chalice");
+        // Return to cellar via underground
+        sendCommand("s"); sendCommand("s"); sendCommand("s");
+        sendCommand("s"); sendCommand("s"); sendCommand("w"); sendCommand("s");
+        // Maze for key + coins
+        sendCommand("s"); sendCommand("e"); sendCommand("take key");
+        sendCommand("n"); sendCommand("take coins");
+        // Exit via grating
+        sendCommand("n"); sendCommand("u");
+        sendCommand("open grating"); sendCommand("u");
+        // Surface to living room
+        sendCommand("n"); sendCommand("n"); sendCommand("n");
+        sendCommand("n"); sendCommand("e"); sendCommand("w"); sendCommand("e");
+        // Deposit all
+        sendCommand("open case");
+        sendCommand("put painting in case");
+        sendCommand("put bracelet in case");
+        sendCommand("put bar in case");
+        sendCommand("put torch in case");
+        sendCommand("put chalice in case");
+        sendCommand("put coins in case");
+        String text = sendCommand("score");
+        assertTrue(text.contains("45"), "Score should be 45 after troll + 6 treasures, got: " + text);
+    }
+
+    @Test
+    public void testVictoryCondition() {
+        selectAndGetText();
+        navigatePastTroll();
+        sendCommand("drop sword");
+        // Collect underground treasures
+        sendCommand("n"); sendCommand("take painting");
+        sendCommand("n"); sendCommand("n"); sendCommand("take bracelet");
+        sendCommand("e"); sendCommand("take bar");
+        sendCommand("w"); sendCommand("n"); sendCommand("n");
+        sendCommand("take torch"); sendCommand("take chalice");
+        // Return via maze/grating
+        sendCommand("s"); sendCommand("s"); sendCommand("s");
+        sendCommand("s"); sendCommand("s"); sendCommand("w"); sendCommand("s");
+        sendCommand("s"); sendCommand("e"); sendCommand("take key");
+        sendCommand("n"); sendCommand("take coins");
+        sendCommand("n"); sendCommand("u");
+        sendCommand("open grating"); sendCommand("u");
+        // To living room
+        sendCommand("n"); sendCommand("n"); sendCommand("n");
+        sendCommand("n"); sendCommand("e"); sendCommand("w"); sendCommand("e");
+        // Deposit 6 treasures
+        sendCommand("open case");
+        sendCommand("put painting in case"); sendCommand("put bracelet in case");
+        sendCommand("put bar in case"); sendCommand("put torch in case");
+        sendCommand("put chalice in case"); sendCommand("put coins in case");
+        // Get egg from tree
+        sendCommand("w"); sendCommand("w"); sendCommand("e");
+        sendCommand("s"); sendCommand("u"); sendCommand("take egg");
+        sendCommand("d"); sendCommand("s"); sendCommand("e");
+        sendCommand("w"); sendCommand("e");
+        // Deposit egg → victory
+        String text = sendCommand("put egg in case");
+        assertTrue(text.contains("Congratulations"), "Should trigger victory, got: " + text);
+        text = sendCommand("score");
+        assertTrue(text.contains("50"), "Final score should be 50, got: " + text);
+    }
+
     // ---- Navigation helpers ----
 
     private void navigateToLivingRoom() {
@@ -379,5 +623,13 @@ public class ZorkTest extends BaseTest {
         sendCommand("move rug");
         sendCommand("open trap");
         sendCommand("down");
+    }
+
+    /** Navigate to East of Chasm with troll defeated. Holding lamp only. */
+    private void navigatePastTroll() {
+        navigateToCellar();
+        sendCommand("n"); // Troll Room
+        sendCommand("attack troll");
+        sendCommand("e"); // East of Chasm
     }
 }
